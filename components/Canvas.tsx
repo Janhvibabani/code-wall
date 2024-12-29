@@ -216,8 +216,7 @@ export default function Canvas({
       canvas.off('mouse:move', handleMouseMove);
       canvas.off('mouse:up', handleMouseUp);
     };
-  }, [canvas, activeTool, strokeColor, strokeWidth, opacity, isDrawing, currentShape]);
-
+  }, [canvas, activeTool, strokeColor, strokeWidth, opacity, isDrawing, currentShape, startPoint]);
   useEffect(() => {
     if (!canvas) return;
     canvas.setZoom(zoom / 100);
