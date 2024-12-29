@@ -67,18 +67,9 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 👏 Acknowledgments
 
 - [Fabric.js](http://fabricjs.com/) for the powerful canvas manipulation library
 - [Next.js](https://nextjs.org/) for the amazing React framework
 - [Tailwind CSS](https://tailwindcss.com/) for the utility-first CSS framework
-
-## 📫 Contact
-
-Janhvi Babani - [@YourTwitterHandle](https://twitter.com/YourTwitterHandle)
-
-Project Link: [https://github.com/Janhvibabani/code-wall](https://github.com/Janhvibabani/code-wall)
