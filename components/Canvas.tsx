@@ -33,7 +33,7 @@ export default function Canvas({
     const b = parseInt(hex.substring(4, 6), 16);
     return `rgba(${r}, ${g}, ${b}, ${opacity / 100})`;
   };
-  
+
   useEffect(() => {
     if (canvasRef.current) {
       const newCanvas = new fabric.Canvas(canvasRef.current, {
@@ -76,6 +76,9 @@ export default function Canvas({
       brush.width = strokeWidth;
       return;
     }
+
+    canvas.isDrawingMode = false;
+
     const handleMouseDown = (options: fabric.IEvent) => {
       if (!['rectangle', 'circle', 'line', 'arrow'].includes(activeTool)) return;
 
