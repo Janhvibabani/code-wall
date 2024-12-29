@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Square, Circle, ArrowRight, Minus, Pencil, Type } from 'lucide-react'
+import { Square, Circle, Minus, Pencil, Type } from 'lucide-react'
 
 interface ToolbarProps {
   activeTool: string
@@ -12,7 +12,6 @@ export default function Toolbar({ activeTool, setActiveTool }: ToolbarProps) {
   const tools = [
     { id: 'rectangle', icon: Square, label: 'Rectangle' },
     { id: 'circle', icon: Circle, label: 'Circle' },
-    { id: 'arrow', icon: ArrowRight, label: 'Arrow' },
     { id: 'line', icon: Minus, label: 'Line' },
     { id: 'pencil', icon: Pencil, label: 'Pencil' },
     { id: 'text', icon: Type, label: 'Text' },

@@ -74,10 +74,22 @@ export default function Canvas({
       const rgba = convertToRGBA(strokeColor, opacity);
       brush.color = rgba;
       brush.width = strokeWidth;
+
+      // Ensure the stroke is finalized once the drawing is done
+      canvas.on('mouse:up', () => {
+        // Make sure the pencil path is non-editable and non-selectable
+        const objects = canvas.getObjects();
+        objects.forEach((obj) => {
+          obj.set({
+            selectable: false,
+            evented: false,
+          });
+        });
+        canvas.renderAll();
+      });
+
       return;
     }
-
-    canvas.isDrawingMode = false;
 
     const handleMouseDown = (options: fabric.IEvent) => {
       if (!['rectangle', 'circle', 'line', 'arrow'].includes(activeTool)) return;
@@ -89,6 +101,7 @@ export default function Canvas({
       let shape: fabric.Object | null = null;
 
       if (activeTool === 'rectangle') {
+        canvas.isDrawingMode = false;
         shape = new fabric.Rect({
           left: pointer.x,
           top: pointer.y,
@@ -102,6 +115,7 @@ export default function Canvas({
           evented: false,
         });
       } else if (activeTool === 'circle') {
+        canvas.isDrawingMode = false;
         shape = new fabric.Ellipse({
           left: pointer.x,
           top: pointer.y,
@@ -115,6 +129,7 @@ export default function Canvas({
           evented: false,
         });
       } else if (activeTool === 'line' || activeTool === 'arrow') {
+        canvas.isDrawingMode = false;
         shape = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y], {
           stroke: strokeColor,
           strokeWidth: strokeWidth,
@@ -156,39 +171,7 @@ export default function Canvas({
           x2: pointer.x,
           y2: pointer.y,
         });
-      } else if (activeTool === 'arrow') {
-        const line = currentShape as fabric.Line;
-        line.set({
-          x2: pointer.x,
-          y2: pointer.y,
-        });
-
-        // Create arrowhead dynamically
-        const angle = Math.atan2(pointer.y - startPoint.y, pointer.x - startPoint.x);
-        const headLength = strokeWidth * 3;
-
-        const arrowHead = new fabric.Triangle({
-          left: pointer.x,
-          top: pointer.y,
-          angle: (angle * 180) / Math.PI + 90,
-          width: headLength,
-          height: headLength,
-          fill: strokeColor,
-          selectable: false,
-          evented: false,
-        });
-
-        // Combine the line and arrowhead
-        const arrowGroup = new fabric.Group([line, arrowHead], {
-          selectable: false,
-          evented: false,
-        });
-
-        canvas.remove(currentShape);
-        canvas.add(arrowGroup);
-        setCurrentShape(arrowGroup);
       }
-
       canvas.renderAll();
     };
 
