@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CodeWall 🎨
 
-## Getting Started
+A real-time collaborative doodling platform where creativity knows no bounds. CodeWall allows users to create virtual rooms and invite others for synchronized drawing sessions.
 
-First, run the development server:
+## ✨ Features
 
+- **Real-time Collaboration**: Draw together with friends and colleagues in synchronized virtual rooms
+- **Room Management**: Create private rooms and invite others with unique room codes
+- **Rich Drawing Tools**: Powered by Fabric.js for a smooth drawing experience
+- **Responsive Design**: Works seamlessly across different devices and screen sizes
+- **Modern UI**: Clean and intuitive interface built with Tailwind CSS
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React.js with Next.js for server-side rendering
+- **Styling**: Tailwind CSS for modern, responsive design
+- **Canvas**: Fabric.js for powerful drawing capabilities
+- **Language**: TypeScript for type-safe code
+- **Real-time Communication**: WebSocket for live collaboration
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js (v14.0 or higher)
+- npm or yarn
+- Git
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/Janhvibabani/code-wall.git
+cd code-wall
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Start the development server:
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🎯 Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Create a new room or join an existing one using a room code
+2. Start drawing using the available tools
+3. Share your room code with others to collaborate
+4. Draw together in real-time!
 
-## Learn More
+## 🤝 Contributing
 
-To learn more about Next.js, take a look at the following resources:
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📝 License
 
-## Deploy on Vercel
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 👏 Acknowledgments
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Fabric.js](http://fabricjs.com/) for the powerful canvas manipulation library
+- [Next.js](https://nextjs.org/) for the amazing React framework
+- [Tailwind CSS](https://tailwindcss.com/) for the utility-first CSS framework
+
+## 📫 Contact
+
+Janhvi Babani - [@YourTwitterHandle](https://twitter.com/YourTwitterHandle)
+
+Project Link: [https://github.com/Janhvibabani/code-wall](https://github.com/Janhvibabani/code-wall)
