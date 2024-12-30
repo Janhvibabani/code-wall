@@ -192,7 +192,7 @@ export default function Canvas({
   return (
     <div ref={containerRef} className="relative w-full h-full">
       <div 
-        className="absolute inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"
+        className="absolute inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#80808033_1px,transparent_1px),linear-gradient(to_bottom,#80808033_1px,transparent_1px)] bg-[size:14px_24px]"
         style={{ backgroundColor }}
       />
       <canvas ref={canvasRef} className="absolute inset-0" />
