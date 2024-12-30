@@ -8,7 +8,6 @@ interface CanvasProps {
   strokeColor: string;
   backgroundColor: string;
   strokeWidth: number;
-  opacity: number;
   zoom: number;
 }
 
@@ -17,31 +16,21 @@ export default function Canvas({
   strokeColor,
   backgroundColor,
   strokeWidth,
-  opacity,
   zoom,
 }: CanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
-  const [currentShape, setCurrentShape] = useState<fabric.Object | null>(null);
-
-  const convertToRGBA = (hex: string, opacity: number): string => {
-    hex = hex.replace('#', '');
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    return `rgba(${r}, ${g}, ${b}, ${opacity / 100})`;
-  };
 
   useEffect(() => {
     if (canvasRef.current) {
       const newCanvas = new fabric.Canvas(canvasRef.current, {
         width: window.innerWidth - 240,
         height: window.innerHeight - 120,
-        backgroundColor: '#ffffff',
+        backgroundColor: backgroundColor,
+        selection: true,
       });
-
       setCanvas(newCanvas);
 
       const handleResize = () => {
@@ -49,6 +38,7 @@ export default function Canvas({
           width: window.innerWidth - 240,
           height: window.innerHeight - 120,
         });
+        newCanvas.renderAll();
       };
 
       window.addEventListener('resize', handleResize);
@@ -58,158 +48,124 @@ export default function Canvas({
         newCanvas.dispose();
       };
     }
-  }, []);
+  }, [backgroundColor]);
 
   useEffect(() => {
     if (!canvas) return;
 
-    canvas.off('mouse:down');
-    canvas.off('mouse:move');
-    canvas.off('mouse:up');
-
-    // Pencil tool setup
-    if (activeTool === 'pencil') {
-      canvas.isDrawingMode = true;
-      const brush = canvas.freeDrawingBrush as fabric.PencilBrush;
-      const rgba = convertToRGBA(strokeColor, opacity);
-      brush.color = rgba;
-      brush.width = strokeWidth;
-
-      // Ensure the stroke is finalized once the drawing is done
-      canvas.on('mouse:up', () => {
-        // Make sure the pencil path is non-editable and non-selectable
-        const objects = canvas.getObjects();
-        objects.forEach((obj) => {
-          obj.set({
-            selectable: false,
-            evented: false,
-          });
-        });
-        canvas.renderAll();
-      });
-
-      return;
-    }
+    canvas.isDrawingMode = activeTool === 'pencil';
+    canvas.selection = activeTool === 'select';
 
     const handleMouseDown = (options: fabric.IEvent) => {
-      if (!['rectangle', 'circle', 'line', 'arrow'].includes(activeTool)) return;
+      if (options.target) return;
 
       const pointer = canvas.getPointer(options.e);
-      setIsDrawing(true);
       setStartPoint({ x: pointer.x, y: pointer.y });
 
-      let shape: fabric.Object | null = null;
-
-      if (activeTool === 'rectangle') {
-        canvas.isDrawingMode = false;
-        shape = new fabric.Rect({
+      if (activeTool === 'textbox') {
+        const text = new fabric.IText('Type here', {
           left: pointer.x,
           top: pointer.y,
-          width: 0,
-          height: 0,
-          stroke: strokeColor,
-          strokeWidth: strokeWidth,
-          fill: 'transparent',
-          opacity: opacity / 100,
-          selectable: false,
-          evented: false,
+          fontFamily: 'Arial',
+          fontSize: 20,
+          fill: strokeColor,
+          selectable: true,
+          editable: true,
         });
-      } else if (activeTool === 'circle') {
-        canvas.isDrawingMode = false;
-        shape = new fabric.Ellipse({
-          left: pointer.x,
-          top: pointer.y,
-          rx: 0,
-          ry: 0,
-          stroke: strokeColor,
-          strokeWidth: strokeWidth,
-          fill: 'transparent',
-          opacity: opacity / 100,
-          selectable: false,
-          evented: false,
-        });
-      } else if (activeTool === 'line' || activeTool === 'arrow') {
-        canvas.isDrawingMode = false;
-        shape = new fabric.Line([pointer.x, pointer.y, pointer.x, pointer.y], {
-          stroke: strokeColor,
-          strokeWidth: strokeWidth,
-          opacity: opacity / 100,
-          selectable: false,
-          evented: false,
-        });
-      }
-
-      if (shape) {
-        canvas.add(shape);
-        setCurrentShape(shape);
+        canvas.add(text);
+        canvas.setActiveObject(text);
+        text.enterEditing();
+        canvas.renderAll();
+      } else if (['rectangle', 'circle', 'line'].includes(activeTool)) {
+        setIsDrawing(true);
       }
     };
 
     const handleMouseMove = (options: fabric.IEvent) => {
-      if (!isDrawing || !startPoint || !currentShape) return;
+      if (!isDrawing || !startPoint) return;
 
       const pointer = canvas.getPointer(options.e);
-      const width = pointer.x - startPoint.x;
-      const height = pointer.y - startPoint.y;
+      let shape: fabric.Object | null = null;
 
-      if (activeTool === 'rectangle') {
-        (currentShape as fabric.Rect).set({
-          left: Math.min(startPoint.x, pointer.x),
-          top: Math.min(startPoint.y, pointer.y),
-          width: Math.abs(width),
-          height: Math.abs(height),
-        });
-      } else if (activeTool === 'circle') {
-        (currentShape as fabric.Ellipse).set({
-          left: Math.min(startPoint.x, pointer.x),
-          top: Math.min(startPoint.y, pointer.y),
-          rx: Math.abs(width) / 2,
-          ry: Math.abs(height) / 2,
-        });
-      } else if (activeTool === 'line') {
-        (currentShape as fabric.Line).set({
-          x2: pointer.x,
-          y2: pointer.y,
-        });
+      switch (activeTool) {
+        case 'rectangle':
+          shape = new fabric.Rect({
+            left: Math.min(startPoint.x, pointer.x),
+            top: Math.min(startPoint.y, pointer.y),
+            width: Math.abs(pointer.x - startPoint.x),
+            height: Math.abs(pointer.y - startPoint.y),
+            fill: 'transparent',
+            stroke: strokeColor,
+            strokeWidth: strokeWidth,
+            selectable: true,
+          });
+          break;
+        case 'circle':
+          const radius = Math.sqrt(
+            Math.pow(pointer.x - startPoint.x, 2) + Math.pow(pointer.y - startPoint.y, 2)
+          ) / 2;
+          shape = new fabric.Circle({
+            left: Math.min(startPoint.x, pointer.x),
+            top: Math.min(startPoint.y, pointer.y),
+            radius: radius,
+            fill: 'transparent',
+            stroke: strokeColor,
+            strokeWidth: strokeWidth,
+            selectable: true,
+          });
+          break;
+        case 'line':
+          shape = new fabric.Line([startPoint.x, startPoint.y, pointer.x, pointer.y], {
+            stroke: strokeColor,
+            strokeWidth: strokeWidth,
+            selectable: true,
+          });
+          break;
       }
-      canvas.renderAll();
+
+      if (shape) {
+        canvas.remove(...canvas.getObjects().filter(obj => obj.data === 'temp'));
+        shape.data = 'temp';
+        canvas.add(shape);
+        canvas.renderAll();
+      }
     };
 
     const handleMouseUp = () => {
-      setIsDrawing(false);
-      setStartPoint(null);
-
-      if (currentShape) {
-        currentShape.set({
-          selectable: false,
-          evented: false,
-        });
+      if (isDrawing) {
+        const tempObject = canvas.getObjects().find(obj => obj.data === 'temp');
+        if (tempObject) {
+          tempObject.data = '';
+        }
+        setIsDrawing(false);
+        setStartPoint(null);
         canvas.renderAll();
       }
-
-      setCurrentShape(null);
     };
 
     canvas.on('mouse:down', handleMouseDown);
     canvas.on('mouse:move', handleMouseMove);
     canvas.on('mouse:up', handleMouseUp);
 
+    if (canvas.freeDrawingBrush) {
+      canvas.freeDrawingBrush.color = strokeColor;
+      canvas.freeDrawingBrush.width = strokeWidth;
+    }
+
     return () => {
       canvas.off('mouse:down', handleMouseDown);
       canvas.off('mouse:move', handleMouseMove);
       canvas.off('mouse:up', handleMouseUp);
     };
-  }, [canvas, activeTool, strokeColor, strokeWidth, opacity, isDrawing, currentShape]);
+  }, [canvas, activeTool, strokeColor, strokeWidth, isDrawing, startPoint]);
 
   useEffect(() => {
-    if (!canvas) return;
-    canvas.setZoom(zoom / 100);
+    if (canvas) {
+      canvas.setZoom(zoom / 100);
+      canvas.renderAll();
+    }
   }, [canvas, zoom]);
-
-  useEffect(() => {
-    if (!canvas) return;
-    canvas.setBackgroundColor(backgroundColor, canvas.renderAll.bind(canvas));
-  }, [canvas, backgroundColor]);
 
   return <canvas ref={canvasRef} />;
 }
+

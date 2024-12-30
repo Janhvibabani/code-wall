@@ -40,7 +40,6 @@ export default function Home() {
             strokeColor={strokeColor}
             backgroundColor={backgroundColor}
             strokeWidth={strokeWidth}
-            opacity={opacity}
             zoom={zoom}
           />
         </div>
