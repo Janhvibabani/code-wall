@@ -15,7 +15,8 @@ const Textbox: React.FC<TextboxProps> = ({ canvas, activeTool, strokeColor, opac
     const handleMouseDown = (options: fabric.IEvent) => {
       if (activeTool === 'textbox' && !options.target) {
         const pointer = canvas.getPointer(options.e);
-        const text = new fabric.IText('Type here', {
+
+        const text = new fabric.IText('', {
           left: pointer.x,
           top: pointer.y,
           fontFamily: 'Arial',
@@ -26,6 +27,22 @@ const Textbox: React.FC<TextboxProps> = ({ canvas, activeTool, strokeColor, opac
           selectable: true,
           hasControls: true,
           hasBorders: true,
+        });
+
+        // Add a listener for when the user starts typing
+        text.on('text:changed', () => {
+          if (text.text === '') {
+            text.set({ text: 'Type here', fill: 'gray', opacity: 0.5 });
+          } else {
+            
+            text.set({ fill: 'black', opacity: opacity / 100 });
+          }
+          canvas.renderAll();
+        });
+
+        text.on('editing:entered', () => {
+          text.set({ fill: 'black' });
+          canvas.renderAll();
         });
 
         canvas.add(text);
@@ -57,4 +74,3 @@ const Textbox: React.FC<TextboxProps> = ({ canvas, activeTool, strokeColor, opac
 };
 
 export default Textbox;
-

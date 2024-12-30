@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { fabric } from 'fabric';
+import Textbox from './Textbox'; // Import the Textbox component
 
 interface CanvasProps {
   activeTool: string;
@@ -63,18 +64,40 @@ export default function Canvas({
       setStartPoint({ x: pointer.x, y: pointer.y });
 
       if (activeTool === 'textbox') {
-        const text = new fabric.IText('Type here', {
+        const text = new fabric.IText('', {
           left: pointer.x,
           top: pointer.y,
           fontFamily: 'Arial',
           fontSize: 20,
-          fill: strokeColor,
+          fill: 'black',
           selectable: true,
           editable: true,
+          hasControls: true,
+          hasBorders: true,
         });
+
+        // Add a custom placeholder behavior
+        text.on('editing:entered', () => {
+          if (text.text === '') {
+            text.set({ text: 'Type here', fill: 'gray' }); 
+            canvas.renderAll();
+          } else {
+            text.set({ fill: 'black' }); 
+          }
+        });
+
+        text.on('editing:exited', () => {
+          if (text.text === 'Type here') {
+            text.set({ text: '', fill: 'black' }); 
+            canvas.renderAll();
+          } else {
+            text.set({ fill: 'black' });
+          }
+        });
+
         canvas.add(text);
         canvas.setActiveObject(text);
-        text.enterEditing();
+        text.enterEditing(); // Start editing immediately
         canvas.renderAll();
       } else if (['rectangle', 'circle', 'line'].includes(activeTool)) {
         setIsDrawing(true);
@@ -166,6 +189,18 @@ export default function Canvas({
     }
   }, [canvas, zoom]);
 
-  return <canvas ref={canvasRef} />;
+  return (
+    <>
+      <canvas ref={canvasRef} />
+      {/* Render the Textbox component */}
+      {canvas && (
+        <Textbox
+          canvas={canvas}
+          activeTool={activeTool}
+          strokeColor={strokeColor}
+          opacity={100} // Can adjust this value as needed
+        />
+      )}
+    </>
+  );
 }
-
