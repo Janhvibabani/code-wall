@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { fabric } from 'fabric';
 import Textbox from './Textbox';
 
@@ -10,7 +10,16 @@ interface CanvasProps {
   backgroundColor: string;
   strokeWidth: number;
   zoom: number;
+  activeBrush: string;
+  opacity: number;
+  onUndo: (callback: () => void) => void;
+  onRedo: (callback: () => void) => void;
 }
+
+const convertToRGBA = (color: string, opacity: number): string => {
+  const rgb = fabric.Color.fromHex(color).getSource();
+  return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${opacity / 100})`;
+};
 
 export default function Canvas({
   activeTool,
@@ -18,15 +27,30 @@ export default function Canvas({
   backgroundColor,
   strokeWidth,
   zoom,
+  activeBrush,
+  opacity,
+  onUndo: _onUndo,
+  onRedo: _onRedo,
 }: CanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
+  const [history, setHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  
+  const undoRedoRef = useRef({
+    undo: () => {},
+    redo: () => {}
+  });
+
+  const isInitialMount = useRef(true);
+  const historyUpdateTimeout = useRef<NodeJS.Timeout>();
+  const canvasEventsSet = useRef(false);
 
   useEffect(() => {
-    if (canvasRef.current && containerRef.current) {
+    if (canvasRef.current && containerRef.current && !canvas) {
       const newCanvas = new fabric.Canvas(canvasRef.current, {
         width: window.innerWidth - 240,
         height: window.innerHeight - 120,
@@ -52,6 +76,25 @@ export default function Canvas({
     }
   }, []);
 
+  const saveToHistory = useCallback((fabricCanvas: fabric.Canvas) => {
+    if (historyUpdateTimeout.current) {
+      clearTimeout(historyUpdateTimeout.current);
+    }
+
+    historyUpdateTimeout.current = setTimeout(() => {
+      try {
+        const json = JSON.stringify(fabricCanvas.toJSON(['data']));
+        setHistory(prevHistory => {
+          const newHistory = [...prevHistory.slice(0, historyIndex + 1), json];
+          setHistoryIndex(newHistory.length - 1);
+          return newHistory;
+        });
+      } catch (error) {
+        console.warn('Failed to save canvas state:', error);
+      }
+    }, 100);
+  }, [historyIndex]);
+
   useEffect(() => {
     if (!canvas) return;
 
@@ -59,6 +102,16 @@ export default function Canvas({
     canvas.selection = activeTool === 'select';
 
     const handleMouseDown = (options: fabric.IEvent) => {
+      if (activeTool === 'delete') {
+        if (options.target) {
+          canvas.remove(options.target);
+          canvas.discardActiveObject();
+          canvas.renderAll();
+          saveToHistory(canvas);
+        }
+        return;
+      }
+
       if (options.target) return;
 
       const pointer = canvas.getPointer(options.e);
@@ -99,6 +152,33 @@ export default function Canvas({
         canvas.setActiveObject(text);
         text.enterEditing();
         canvas.renderAll();
+        saveToHistory(canvas);
+      } else if (activeTool === 'pencil') {
+        canvas.isDrawingMode = true;
+        canvas.selection = false;
+
+        switch (activeBrush) {
+          case 'PencilBrush':
+            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+            break;
+          case 'CircleBrush':
+            canvas.freeDrawingBrush = new fabric.CircleBrush();
+            break;
+          case 'SprayBrush':
+            canvas.freeDrawingBrush = new fabric.SprayBrush();
+            break;
+          case 'PatternBrush':
+            canvas.freeDrawingBrush = new fabric.PatternBrush(canvas);
+            break;
+          default:
+            canvas.freeDrawingBrush = new fabric.PencilBrush(canvas);
+        }
+
+        const rgba = convertToRGBA(strokeColor, opacity);
+        if (canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush.color = rgba;
+          canvas.freeDrawingBrush.width = strokeWidth;
+        }
       } else if (['rectangle', 'circle', 'line'].includes(activeTool)) {
         setIsDrawing(true);
       }
@@ -159,6 +239,7 @@ export default function Canvas({
         const tempObject = canvas.getObjects().find(obj => obj.data === 'temp');
         if (tempObject) {
           tempObject.data = '';
+          saveToHistory(canvas);
         }
         setIsDrawing(false);
         setStartPoint(null);
@@ -166,21 +247,34 @@ export default function Canvas({
       }
     };
 
-    canvas.on('mouse:down', handleMouseDown);
-    canvas.on('mouse:move', handleMouseMove);
-    canvas.on('mouse:up', handleMouseUp);
+    if (!canvasEventsSet.current) {
+      canvas.on('mouse:down', handleMouseDown);
+      canvas.on('mouse:move', handleMouseMove);
+      canvas.on('mouse:up', handleMouseUp);
+      canvasEventsSet.current = true;
 
-    if (canvas.freeDrawingBrush) {
-      canvas.freeDrawingBrush.color = strokeColor;
-      canvas.freeDrawingBrush.width = strokeWidth;
+      return () => {
+        canvas.off('mouse:down', handleMouseDown);
+        canvas.off('mouse:move', handleMouseMove);
+        canvas.off('mouse:up', handleMouseUp);
+        canvasEventsSet.current = false;
+      };
     }
+  }, [canvas, activeTool, strokeColor, strokeWidth, isDrawing, startPoint, activeBrush, opacity, saveToHistory]);
 
-    return () => {
-      canvas.off('mouse:down', handleMouseDown);
-      canvas.off('mouse:move', handleMouseMove);
-      canvas.off('mouse:up', handleMouseUp);
-    };
-  }, [canvas, activeTool, strokeColor, strokeWidth, isDrawing, startPoint]);
+  useEffect(() => {
+    if (!canvas) return;
+
+    if (activeTool === 'delete') {
+      const activeObject = canvas.getActiveObject();
+      if (activeObject) {
+        canvas.remove(activeObject);
+        canvas.discardActiveObject();
+        canvas.renderAll();
+        saveToHistory(canvas);
+      }
+    }
+  }, [canvas, activeTool, saveToHistory]);
 
   useEffect(() => {
     if (canvas) {
@@ -188,6 +282,51 @@ export default function Canvas({
       canvas.renderAll();
     }
   }, [canvas, zoom]);
+
+  const memoizedHandleUndo = useCallback(() => {
+    if (!canvas || historyIndex <= 0) return;
+    try {
+      setHistoryIndex(prevIndex => prevIndex - 1);
+      const previousState = history[historyIndex - 1];
+      canvas.loadFromJSON(previousState, () => {
+        canvas.renderAll();
+      });
+    } catch (error) {
+      console.warn('Failed to undo:', error);
+    }
+  }, [canvas, historyIndex, history]);
+
+  const memoizedHandleRedo = useCallback(() => {
+    if (!canvas || historyIndex >= history.length - 1) return;
+    try {
+      setHistoryIndex(prevIndex => prevIndex + 1);
+      const nextState = history[historyIndex + 1];
+      canvas.loadFromJSON(nextState, () => {
+        canvas.renderAll();
+      });
+    } catch (error) {
+      console.warn('Failed to redo:', error);
+    }
+  }, [canvas, historyIndex, history]);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    undoRedoRef.current = {
+      undo: memoizedHandleUndo,
+      redo: memoizedHandleRedo
+    };
+  }, [memoizedHandleUndo, memoizedHandleRedo]);
+
+  useEffect(() => {
+    if (isInitialMount.current) return;
+    
+    _onUndo(undoRedoRef.current.undo);
+    _onRedo(undoRedoRef.current.redo);
+  }, [_onUndo, _onRedo]);
 
   return (
     <div ref={containerRef} className="relative w-full h-full">
@@ -201,7 +340,7 @@ export default function Canvas({
           canvas={canvas}
           activeTool={activeTool}
           strokeColor={strokeColor}
-          opacity={100}
+          opacity={opacity}
         />
       )}
     </div>
