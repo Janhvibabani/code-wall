@@ -32,6 +32,7 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           animate={{
             y: [`${y - 5}%`, `${y + 5}%`],
             x: [`${x - 2}%`, `${x + 2}%`],
+            opacity: [1, 0.5, 1],
           }}
           transition={{
             y: {
@@ -47,6 +48,11 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
               repeatType: "reverse",
               ease: "easeInOut",
               delay
+            },
+            opacity: {
+              duration: 0.5,
+              repeat: Infinity,
+              ease: "easeInOut",
             }
           }}
         >
@@ -86,7 +92,7 @@ export default function WelcomeScreen({ onStart }: WelcomeScreenProps) {
               placeholder="Enter your username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full pl-10 bg-white/50 backdrop-blur-sm border border-purple-500 text-black"
+              className="w-full pl-10 bg-white/50 backdrop-blur-[10%] border border-purple-500 text-black"
             />
             <Pencil className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-400" />
           </div>

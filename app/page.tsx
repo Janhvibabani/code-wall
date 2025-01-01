@@ -10,11 +10,14 @@ import BottomBar from '@/components/BottomBar'
 export default function Home() {
   const [showWelcome, setShowWelcome] = useState(true)
   const [activeTool, setActiveTool] = useState('select')
+  const [activeBrush, setActiveBrush] = useState('PencilBrush') // Default brush
   const [strokeColor, setStrokeColor] = useState('#000000')
   const [backgroundColor, setBackgroundColor] = useState('#ffffff')
   const [strokeWidth, setStrokeWidth] = useState(2)
   const [opacity, setOpacity] = useState(100)
   const [zoom, setZoom] = useState(100)
+  const [undoFn, setUndoFn] = useState<() => void>(() => {});
+  const [redoFn, setRedoFn] = useState<() => void>(() => {});
 
   if (showWelcome) {
     return <WelcomeScreen onStart={() => setShowWelcome(false)} />
@@ -33,17 +36,21 @@ export default function Home() {
         setOpacity={setOpacity}
       />
       <div className="flex-1 flex flex-col">
-        <Toolbar activeTool={activeTool} setActiveTool={setActiveTool} />
+        <Toolbar activeTool={activeTool} setActiveTool={setActiveTool} activeBrush={activeBrush} setActiveBrush={setActiveBrush} />
         <div className="flex-1 relative">
           <Canvas
             activeTool={activeTool}
+            activeBrush={activeBrush}
             strokeColor={strokeColor}
             backgroundColor={backgroundColor}
             strokeWidth={strokeWidth}
+            opacity={opacity}
             zoom={zoom}
+            onUndo={(fn) => setUndoFn(() => fn)}
+            onRedo={(fn) => setRedoFn(() => fn)}
           />
         </div>
-        <BottomBar zoom={zoom} setZoom={setZoom} />
+        <BottomBar zoom={zoom} setZoom={setZoom} onUndo={undoFn} onRedo={redoFn} />
       </div>
     </div>
   )
